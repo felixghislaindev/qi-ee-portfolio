@@ -1,7 +1,11 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { CLOUDINARY_CONFIG, fetchCloudinaryImages, getCloudinaryUrl } from "@/lib/cloudinary"
+import { useState, useEffect } from "react";
+import {
+  CLOUDINARY_CONFIG,
+  fetchCloudinaryImages,
+  getCloudinaryUrl,
+} from "@/lib/cloudinary";
 
 // Local dummy images (current setup)
 const localImages = [
@@ -89,66 +93,70 @@ const localImages = [
     description: "The city as a living, breathing entity",
     year: "2024",
   },
-]
+];
 
 export interface PhotographyImage {
-  id: string | number
-  title: string
-  image?: string // For local images
-  publicId?: string // For Cloudinary images
-  description: string
-  year: string
+  id: string | number;
+  title: string;
+  image?: string; // For local images
+  publicId?: string; // For Cloudinary images
+  description: string;
+  year: string;
 }
 
 export function usePhotographyImages() {
-  const [images, setImages] = useState<PhotographyImage[]>(localImages)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [images, setImages] = useState<PhotographyImage[]>(localImages);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadImages() {
       if (!CLOUDINARY_CONFIG.USE_CLOUDINARY) {
         // Use local images
-        setImages(localImages)
-        return
+        setImages(localImages);
+        return;
       }
 
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       try {
-        const cloudinaryImages = await fetchCloudinaryImages()
-
+        const cloudinaryImages = await fetchCloudinaryImages();
         // Transform Cloudinary images to match our interface
-        const transformedImages: PhotographyImage[] = cloudinaryImages.map((img) => ({
-          id: img.id,
-          title: img.title,
-          publicId: img.publicId,
-          description: img.description,
-          year: img.year,
-        }))
+        const transformedImages: PhotographyImage[] = cloudinaryImages.map(
+          (img) => ({
+            id: img.id,
+            title: img.title,
+            publicId: img.publicId,
+            description: img.description,
+            year: img.year,
+          })
+        );
 
-        setImages(transformedImages)
+        setImages(transformedImages);
       } catch (err) {
-        setError("Failed to load images")
-        console.error("Error loading images:", err)
+        setError("Failed to load images");
+        console.error("Error loading images:", err);
         // Fallback to local images on error
-        setImages(localImages)
+        setImages(localImages);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    loadImages()
-  }, [])
+    loadImages();
+  }, []);
 
   // Helper function to get the correct image URL
-  const getImageUrl = (image: PhotographyImage, options?: { width?: number; height?: number }) => {
+  const getImageUrl = (
+    image: PhotographyImage,
+    options?: { width?: number; height?: number }
+  ) => {
     if (image.publicId && CLOUDINARY_CONFIG.USE_CLOUDINARY) {
-      return getCloudinaryUrl(image.publicId, options)
+      return getCloudinaryUrl(image.publicId, options);
     }
-    return image.image || "/placeholder.svg"
-  }
+    return image.image || "/placeholder.svg";
+  };
 
   return {
     images,
@@ -156,5 +164,5 @@ export function usePhotographyImages() {
     error,
     getImageUrl,
     isUsingCloudinary: CLOUDINARY_CONFIG.USE_CLOUDINARY,
-  }
+  };
 }

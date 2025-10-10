@@ -1,11 +1,14 @@
-import { NextResponse } from "next/server"
-import { CLOUDINARY_CONFIG } from "@/lib/cloudinary"
+import { NextResponse } from "next/server";
+import { CLOUDINARY_CONFIG } from "@/lib/cloudinary";
 
 // Server-side API route to fetch images from Cloudinary
 export async function GET() {
+  console.log(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.CLOUD_NAME}/resources/image?folder=${CLOUDINARY_CONFIG.FOLDER}&max_results=100&context=true`
+  );
   try {
     if (!CLOUDINARY_CONFIG.USE_CLOUDINARY) {
-      return NextResponse.json({ images: [] })
+      return NextResponse.json({ images: [] });
     }
 
     // Cloudinary Admin API call
@@ -13,18 +16,20 @@ export async function GET() {
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.CLOUD_NAME}/resources/image?folder=${CLOUDINARY_CONFIG.FOLDER}&max_results=100&context=true`,
       {
         headers: {
-          Authorization: `Basic ${Buffer.from(`${CLOUDINARY_CONFIG.API_KEY}:${CLOUDINARY_CONFIG.API_SECRET}`).toString(
-            "base64",
-          )}`,
+          Authorization: `Basic ${Buffer.from(
+            `${CLOUDINARY_CONFIG.API_KEY}:${CLOUDINARY_CONFIG.API_SECRET}`
+          ).toString("base64")}`,
         },
-      },
-    )
+      }
+    );
+    console.log("Cloudinary API response status:", response);
 
     if (!response.ok) {
-      throw new Error("Failed to fetch from Cloudinary")
+      throw new Error("Failed to fetch from Cloudinary");
     }
 
-    const data = await response.json()
+    const data = await response.json();
+    console.log("Cloudinary response data:", data);
 
     // Transform the response to match our image interface
     const images = data.resources.map((resource: any) => ({
@@ -36,11 +41,14 @@ export async function GET() {
       tags: resource.tags || [],
       width: resource.width,
       height: resource.height,
-    }))
+    }));
 
-    return NextResponse.json({ images })
+    return NextResponse.json({ images });
   } catch (error) {
-    console.error("Cloudinary API error:", error)
-    return NextResponse.json({ error: "Failed to fetch images" }, { status: 500 })
+    console.error("Cloudinary API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch images" },
+      { status: 500 }
+    );
   }
 }
