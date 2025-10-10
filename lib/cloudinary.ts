@@ -12,12 +12,11 @@ export interface CloudinaryImage {
 
 // Configuration - set USE_CLOUDINARY to true when ready to use Cloudinary
 export const CLOUDINARY_CONFIG = {
-  USE_CLOUDINARY: process.env.NEXT_PUBLIC_USE_CLOUDINARY, // Toggle this to switch between local and Cloudinary images
-  CLOUD_NAME:
-    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "your-cloud-name",
-  API_KEY: process.env.CLOUDINARY_API_KEY || "your-api-key",
-  API_SECRET: process.env.CLOUDINARY_API_SECRET || "your-api-secret",
-  FOLDER: process.env.CLOUDINARY_FOLDER, // Cloudinary folder for organization
+  USE_CLOUDINARY: process.env.NEXT_PUBLIC_USE_CLOUDINARY === "true",
+  CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  API_KEY: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  FOLDER: process.env.NEXT_CLOUDINARY_FOLDER || "qi-ee-portfolio-pics",
 };
 
 // Generate Cloudinary URL with transformations

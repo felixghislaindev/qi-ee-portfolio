@@ -3,9 +3,6 @@ import { CLOUDINARY_CONFIG } from "@/lib/cloudinary";
 
 // Server-side API route to fetch images from Cloudinary
 export async function GET() {
-  console.log(
-    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.CLOUD_NAME}/resources/image?folder=${CLOUDINARY_CONFIG.FOLDER}&max_results=100&context=true`
-  );
   try {
     if (!CLOUDINARY_CONFIG.USE_CLOUDINARY) {
       return NextResponse.json({ images: [] });
@@ -22,14 +19,12 @@ export async function GET() {
         },
       }
     );
-    console.log("Cloudinary API response status:", response);
 
     if (!response.ok) {
       throw new Error("Failed to fetch from Cloudinary");
     }
 
     const data = await response.json();
-    console.log("Cloudinary response data:", data);
 
     // Transform the response to match our image interface
     const images = data.resources.map((resource: any) => ({
