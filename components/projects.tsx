@@ -3,21 +3,57 @@
 import { useState, useEffect } from "react"
 import { getCloudinaryVideoUrl, fetchCloudinaryVideos, type CloudinaryVideo } from "@/lib/cloudinary"
 
+// Static project definitions
+const staticProjects = [
+  {
+    id: "delish-cube",
+    title: "Delish Cube – H&S Delight Sdn Bhd",
+    description: [
+      "Assisted in planning and executing public relations and promotional strategies for Delish Cube.",
+      "Created engaging content and visuals for social media campaigns to increase brand awareness.",
+      "Coordinated with team members to ensure smooth project workflow and timely deliverables.",
+      "Presented project results and insights to supervisors, contributing to the company's marketing objectives.",
+    ],
+    videoPublicId: "delish_cube_video",
+    isStatic: true,
+  },
+  {
+    id: "you-digital",
+    title: "You Digital Company",
+    description: [
+      "Collaborated with team members to plan and execute the digital marketing project.",
+      "Assisted in creating content, designing visuals, and building personal branding.",
+      "Conducted research and analysis to support project strategy and decision-making.",
+      "Presented project outcomes to instructors and received positive feedback on creativity and teamwork.",
+    ],
+    videoPublicId: "you_digital_project_video",
+    isStatic: true,
+  },
+]
+
+interface ProjectItem {
+  id: string
+  title: string
+  description: string[] | string
+  videoPublicId: string
+  isStatic?: boolean
+}
+
 export function Projects() {
-  const [videos, setVideos] = useState<CloudinaryVideo[]>([])
+  const [cloudinaryVideos, setCloudinaryVideos] = useState<CloudinaryVideo[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadVideos() {
       setLoading(true)
       try {
-        const cloudinaryVideos = await fetchCloudinaryVideos()
+        const videos = await fetchCloudinaryVideos()
         // Randomize the order
-        const shuffledVideos = [...cloudinaryVideos].sort(() => Math.random() - 0.5)
-        setVideos(shuffledVideos)
+        const shuffledVideos = [...videos].sort(() => Math.random() - 0.5)
+        setCloudinaryVideos(shuffledVideos)
       } catch (error) {
         console.error("Error loading videos:", error)
-        setVideos([])
+        setCloudinaryVideos([])
       } finally {
         setLoading(false)
       }
@@ -32,6 +68,18 @@ export function Projects() {
       format: "auto",
     })
   }
+
+  // Combine static projects with Cloudinary videos
+  const allProjects: ProjectItem[] = [
+    ...staticProjects,
+    ...cloudinaryVideos.map((video) => ({
+      id: video.id,
+      title: video.title,
+      description: video.description,
+      videoPublicId: video.publicId,
+      isStatic: false,
+    })),
+  ]
 
   return (
     <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 bg-accent/20">
@@ -53,18 +101,18 @@ export function Projects() {
           </div>
         )}
 
-        {/* Videos Grid */}
-        {!loading && videos.length > 0 && (
+        {/* Projects Grid */}
+        {!loading && allProjects.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {videos.map((video) => (
+            {allProjects.map((project) => (
               <div
-                key={video.id}
+                key={project.id}
                 className="bg-background border border-border overflow-hidden"
               >
                 {/* Video */}
                 <div className="relative aspect-video bg-muted overflow-hidden">
                   <video
-                    src={getVideoUrl(video.publicId)}
+                    src={getVideoUrl(project.videoPublicId)}
                     controls
                     className="w-full h-full object-cover"
                     preload="metadata"
@@ -75,13 +123,24 @@ export function Projects() {
 
                 {/* Content */}
                 <div className="p-6">
-                  <h3 className="text-2xl font-semibold mb-2 bold-artistic">
-                    {video.title}
+                  <h3 className="text-2xl font-semibold mb-4 bold-artistic">
+                    {project.title}
                   </h3>
-                  {video.description && (
-                    <p className="artistic-text text-muted-foreground">
-                      {video.description}
-                    </p>
+                  {project.isStatic && Array.isArray(project.description) ? (
+                    <ul className="space-y-2 artistic-text text-muted-foreground">
+                      {project.description.map((item, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    project.description && (
+                      <p className="artistic-text text-muted-foreground">
+                        {project.description}
+                      </p>
+                    )
                   )}
                 </div>
               </div>
@@ -90,7 +149,7 @@ export function Projects() {
         )}
 
         {/* Empty State */}
-        {!loading && videos.length === 0 && (
+        {!loading && allProjects.length === 0 && (
           <div className="text-center py-12">
             <p className="artistic-text text-muted-foreground">
               No videos available at the moment.

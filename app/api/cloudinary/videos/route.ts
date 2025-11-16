@@ -27,7 +27,7 @@ export async function GET() {
     const data = await response.json();
 
     // Transform the response to match our video interface
-    const videos = data.resources.map((resource: any) => ({
+    const allVideos = data.resources.map((resource: any) => ({
       id: resource.asset_id,
       title: resource.context?.title || resource.public_id.split("/").pop(),
       description: resource.context?.description || "",
@@ -40,7 +40,17 @@ export async function GET() {
       format: resource.format,
     }));
 
-    return NextResponse.json({ videos });
+    // Deduplicate videos by publicId using a Set
+    const seenPublicIds = new Set<string>();
+    const uniqueVideos = allVideos.filter((video: any) => {
+      if (seenPublicIds.has(video.publicId)) {
+        return false;
+      }
+      seenPublicIds.add(video.publicId);
+      return true;
+    });
+
+    return NextResponse.json({ videos: uniqueVideos });
   } catch (error) {
     console.error("Cloudinary API error:", error);
     return NextResponse.json(
