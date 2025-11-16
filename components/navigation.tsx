@@ -37,6 +37,12 @@ export function Navigation() {
               photography
             </Link>
             <button
+              onClick={() => scrollToSection("projects")}
+              className="artistic-text hover:text-accent-foreground transition-colors"
+            >
+              projects
+            </button>
+            <button
               onClick={() => scrollToSection("about")}
               className="artistic-text hover:text-accent-foreground transition-colors"
             >
@@ -73,6 +79,12 @@ export function Navigation() {
               >
                 photography
               </Link>
+              <button
+                onClick={() => scrollToSection("projects")}
+                className="text-left artistic-text hover:text-accent-foreground transition-colors"
+              >
+                projects
+              </button>
               <button
                 onClick={() => scrollToSection("about")}
                 className="text-left artistic-text hover:text-accent-foreground transition-colors"

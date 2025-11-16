@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Mail, Instagram, Phone } from "lucide-react"
+import { Mail, Phone } from "lucide-react"
 
 export function Contact() {
   const [formData, setFormData] = useState({
@@ -103,15 +103,13 @@ export function Contact() {
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <Mail className="w-5 h-5 text-muted-foreground" />
-                  <span className="artistic-text">hello@qiee.photography</span>
+                  <a href="mailto:teohqiee54@gmail.com" className="artistic-text hover:text-accent-foreground transition-colors">
+                    teohqiee54@gmail.com
+                  </a>
                 </div>
                 <div className="flex items-center space-x-4">
                   <Phone className="w-5 h-5 text-muted-foreground" />
-                  <span className="artistic-text">+1 (555) 123-4567</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Instagram className="w-5 h-5 text-muted-foreground" />
-                  <span className="artistic-text">@qiee.photography</span>
+                  <span className="artistic-text">01128493939</span>
                 </div>
               </div>
             </div>
@@ -128,11 +126,11 @@ export function Contact() {
             </div>
 
             <div>
-              <h3 className="text-xl font-semibold mb-4 bold-artistic">Based in</h3>
+              <h3 className="text-xl font-semibold mb-4 bold-artistic">Address</h3>
               <p className="artistic-text text-muted-foreground">
-                New York City
+                8 Jalan SS15/5f
                 <br />
-                Available for travel worldwide
+                47500 Subang Jaya, Selangor
               </p>
             </div>
           </div>
