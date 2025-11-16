@@ -26,8 +26,16 @@ export async function GET() {
 
     const data = await response.json();
 
+    // Filter videos to only include those in the exact folder (not subfolders)
+    const folderPrefix = `${CLOUDINARY_CONFIG.FOLDER}/`;
+    const folderVideos = data.resources.filter((resource: any) => {
+      // Ensure the video is in the exact folder, not a subfolder
+      return resource.public_id.startsWith(folderPrefix) && 
+             !resource.public_id.substring(folderPrefix.length).includes('/');
+    });
+
     // Transform the response to match our video interface
-    const allVideos = data.resources.map((resource: any) => ({
+    const allVideos = folderVideos.map((resource: any) => ({
       id: resource.asset_id,
       title: resource.context?.title || resource.public_id.split("/").pop(),
       description: resource.context?.description || "",
@@ -50,7 +58,10 @@ export async function GET() {
       return true;
     });
 
-    return NextResponse.json({ videos: uniqueVideos });
+    // Limit to exactly 2 videos (first two in order)
+    const limitedVideos = uniqueVideos.slice(0, 2);
+
+    return NextResponse.json({ videos: limitedVideos });
   } catch (error) {
     console.error("Cloudinary API error:", error);
     return NextResponse.json(

@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react"
 import { getCloudinaryVideoUrl, fetchCloudinaryVideos, type CloudinaryVideo } from "@/lib/cloudinary"
 
-// Static project definitions
-const staticProjects = [
+// Project definitions - videos will be assigned from Cloudinary
+const projectDefinitions = [
   {
     id: "delish-cube",
     title: "Delish Cube – H&S Delight Sdn Bhd",
@@ -14,8 +14,6 @@ const staticProjects = [
       "Coordinated with team members to ensure smooth project workflow and timely deliverables.",
       "Presented project results and insights to supervisors, contributing to the company's marketing objectives.",
     ],
-    videoPublicId: "delish_cube_video",
-    isStatic: true,
   },
   {
     id: "you-digital",
@@ -26,40 +24,49 @@ const staticProjects = [
       "Conducted research and analysis to support project strategy and decision-making.",
       "Presented project outcomes to instructors and received positive feedback on creativity and teamwork.",
     ],
-    videoPublicId: "you_digital_project_video",
-    isStatic: true,
   },
 ]
 
 interface ProjectItem {
   id: string
   title: string
-  description: string[] | string
+  description: string[]
   videoPublicId: string
-  isStatic?: boolean
 }
 
 export function Projects() {
-  const [cloudinaryVideos, setCloudinaryVideos] = useState<CloudinaryVideo[]>([])
+  const [projects, setProjects] = useState<ProjectItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadVideos() {
+    async function loadProjects() {
       setLoading(true)
       try {
         const videos = await fetchCloudinaryVideos()
-        // Randomize the order
-        const shuffledVideos = [...videos].sort(() => Math.random() - 0.5)
-        setCloudinaryVideos(shuffledVideos)
+        
+        // Assign videos to projects in order:
+        // videos[0] → Delish Cube
+        // videos[1] → You Digital Company
+        const assignedProjects: ProjectItem[] = projectDefinitions.map((project, index) => {
+          const video = videos[index]
+          return {
+            id: project.id,
+            title: project.title,
+            description: project.description,
+            videoPublicId: video?.publicId || "",
+          }
+        }).filter(project => project.videoPublicId) // Only include projects with videos
+
+        setProjects(assignedProjects)
       } catch (error) {
-        console.error("Error loading videos:", error)
-        setCloudinaryVideos([])
+        console.error("Error loading projects:", error)
+        setProjects([])
       } finally {
         setLoading(false)
       }
     }
 
-    loadVideos()
+    loadProjects()
   }, [])
 
   const getVideoUrl = (publicId: string) => {
@@ -68,18 +75,6 @@ export function Projects() {
       format: "auto",
     })
   }
-
-  // Combine static projects with Cloudinary videos
-  const allProjects: ProjectItem[] = [
-    ...staticProjects,
-    ...cloudinaryVideos.map((video) => ({
-      id: video.id,
-      title: video.title,
-      description: video.description,
-      videoPublicId: video.publicId,
-      isStatic: false,
-    })),
-  ]
 
   return (
     <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 bg-accent/20">
@@ -102,9 +97,9 @@ export function Projects() {
         )}
 
         {/* Projects Grid */}
-        {!loading && allProjects.length > 0 && (
+        {!loading && projects.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {allProjects.map((project) => (
+            {projects.map((project) => (
               <div
                 key={project.id}
                 className="bg-background border border-border overflow-hidden"
@@ -126,22 +121,14 @@ export function Projects() {
                   <h3 className="text-2xl font-semibold mb-4 bold-artistic">
                     {project.title}
                   </h3>
-                  {project.isStatic && Array.isArray(project.description) ? (
-                    <ul className="space-y-2 artistic-text text-muted-foreground">
-                      {project.description.map((item, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="mr-2">•</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    project.description && (
-                      <p className="artistic-text text-muted-foreground">
-                        {project.description}
-                      </p>
-                    )
-                  )}
+                  <ul className="space-y-2 artistic-text text-muted-foreground">
+                    {project.description.map((item, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             ))}
@@ -149,7 +136,7 @@ export function Projects() {
         )}
 
         {/* Empty State */}
-        {!loading && allProjects.length === 0 && (
+        {!loading && projects.length === 0 && (
           <div className="text-center py-12">
             <p className="artistic-text text-muted-foreground">
               No videos available at the moment.
