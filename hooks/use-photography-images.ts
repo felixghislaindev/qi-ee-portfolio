@@ -122,14 +122,24 @@ export function usePhotographyImages() {
       setError(null);
 
       try {
+        console.log("=== CLIENT-SIDE: Fetching Cloudinary Images ===");
+        console.log("Config:", {
+          USE_CLOUDINARY: CLOUDINARY_CONFIG.USE_CLOUDINARY,
+          CLOUD_NAME: CLOUDINARY_CONFIG.CLOUD_NAME,
+          FOLDER: CLOUDINARY_CONFIG.FOLDER,
+        });
+        
         const cloudinaryImages = await fetchCloudinaryImages();
         
+        console.log(`Received ${cloudinaryImages.length} images from API`);
+        
         if (cloudinaryImages.length === 0) {
-          console.warn("No Cloudinary images found. Check:", {
+          console.warn("⚠️ No Cloudinary images found. Check:", {
             USE_CLOUDINARY: CLOUDINARY_CONFIG.USE_CLOUDINARY,
             CLOUD_NAME: CLOUDINARY_CONFIG.CLOUD_NAME,
             FOLDER: CLOUDINARY_CONFIG.FOLDER,
           });
+          console.warn("Falling back to local images");
           // Fallback to local images if no Cloudinary images
           setImages(localImages);
           return;
@@ -147,7 +157,15 @@ export function usePhotographyImages() {
           })
         );
 
-        console.log(`Loaded ${transformedImages.length} images from Cloudinary`);
+        console.log(`✅ Loaded ${transformedImages.length} images from Cloudinary`);
+        console.log("First 3 images:", transformedImages.slice(0, 3).map(img => ({
+          id: img.id,
+          publicId: img.publicId,
+          version: img.version,
+          title: img.title,
+        })));
+        console.log("=== END CLIENT-SIDE DEBUG ===");
+        
         setImages(transformedImages);
       } catch (err) {
         setError("Failed to load images");
@@ -168,10 +186,21 @@ export function usePhotographyImages() {
     options?: { width?: number; height?: number }
   ) => {
     if (image.publicId && CLOUDINARY_CONFIG.USE_CLOUDINARY) {
-      return getCloudinaryUrl(image.publicId, {
+      const url = getCloudinaryUrl(image.publicId, {
         ...options,
         version: image.version, // Use version for cache busting
       });
+      
+      // Log URL generation for first few images (to avoid spam)
+      if (images.indexOf(image) < 3) {
+        console.log(`Generated URL for "${image.title}":`, {
+          publicId: image.publicId,
+          version: image.version,
+          url: url,
+        });
+      }
+      
+      return url;
     }
     return image.image || "/placeholder.svg";
   };

@@ -118,10 +118,12 @@ export function getCloudinaryVideoUrl(
 // Fetch images from Cloudinary API
 export async function fetchCloudinaryImages(): Promise<CloudinaryImage[]> {
   if (!CLOUDINARY_CONFIG.USE_CLOUDINARY) {
+    console.warn("Cloudinary is disabled. USE_CLOUDINARY is not 'true'");
     return [];
   }
 
   try {
+    console.log("Fetching from /api/cloudinary/images");
     // Disable caching to ensure fresh data
     const response = await fetch("/api/cloudinary/images", {
       cache: "no-store",
@@ -130,12 +132,33 @@ export async function fetchCloudinaryImages(): Promise<CloudinaryImage[]> {
         "Pragma": "no-cache",
       },
     });
-    if (!response.ok) throw new Error("Failed to fetch images");
+    
+    console.log(`API Response status: ${response.status} ${response.statusText}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API Error Response:", errorText);
+      throw new Error(`Failed to fetch images: ${response.status} ${response.statusText}`);
+    }
 
     const data = await response.json();
+    console.log("API Response data:", {
+      imagesCount: data.images?.length || 0,
+      hasError: !!data.error,
+      error: data.error,
+    });
+    
+    if (data.error) {
+      console.error("API returned error:", data.error);
+    }
+    
     return data.images || [];
   } catch (error) {
-    console.error("Error fetching Cloudinary images:", error);
+    console.error("❌ Error fetching Cloudinary images:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     return [];
   }
 }

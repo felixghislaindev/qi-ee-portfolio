@@ -146,6 +146,21 @@ export function Portfolio() {
                     }
                     alt={item.title || "Portfolio Image"}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={(e) => {
+                      console.error("❌ Image failed to load:", {
+                        src: e.currentTarget.src,
+                        publicId: item.publicId,
+                        title: item.title,
+                      });
+                    }}
+                    onLoad={() => {
+                      if (displayedItems.indexOf(item) < 2) {
+                        console.log("✅ Image loaded successfully:", {
+                          src: (document.querySelector(`img[alt="${item.title}"]`) as HTMLImageElement)?.src,
+                          title: item.title,
+                        });
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">

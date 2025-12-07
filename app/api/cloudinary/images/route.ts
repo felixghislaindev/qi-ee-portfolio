@@ -4,16 +4,14 @@ import { CLOUDINARY_CONFIG } from "@/lib/cloudinary";
 // Server-side API route to fetch images from Cloudinary
 export async function GET() {
   try {
-    // Log configuration status for debugging (only in development)
-    if (process.env.NODE_ENV === "development") {
-      console.log("Cloudinary Config:", {
-        USE_CLOUDINARY: CLOUDINARY_CONFIG.USE_CLOUDINARY,
-        CLOUD_NAME: CLOUDINARY_CONFIG.CLOUD_NAME ? "***" : "MISSING",
-        API_KEY: CLOUDINARY_CONFIG.API_KEY ? "***" : "MISSING",
-        API_SECRET: CLOUDINARY_CONFIG.API_SECRET ? "***" : "MISSING",
-        FOLDER: CLOUDINARY_CONFIG.FOLDER,
-      });
-    }
+    // Log configuration status for debugging (works in production too)
+    console.log("=== CLOUDINARY CONFIGURATION ===");
+    console.log("USE_CLOUDINARY:", CLOUDINARY_CONFIG.USE_CLOUDINARY);
+    console.log("CLOUD_NAME:", CLOUDINARY_CONFIG.CLOUD_NAME || "MISSING");
+    console.log("API_KEY:", CLOUDINARY_CONFIG.API_KEY ? "***SET***" : "MISSING");
+    console.log("API_SECRET:", CLOUDINARY_CONFIG.API_SECRET ? "***SET***" : "MISSING");
+    console.log("FOLDER:", CLOUDINARY_CONFIG.FOLDER || "(root)");
+    console.log("================================");
 
     if (!CLOUDINARY_CONFIG.USE_CLOUDINARY) {
       console.warn("Cloudinary is disabled. Set NEXT_PUBLIC_USE_CLOUDINARY=true");
@@ -99,27 +97,57 @@ export async function GET() {
       });
     }
 
-    // Log for debugging
-    if (process.env.NODE_ENV === "development") {
-      console.log(`Found ${data.resources.length} total images, ${folderImages.length} in folder "${CLOUDINARY_CONFIG.FOLDER || 'root'}"`);
-      if (folderImages.length > 0) {
-        console.log("Sample public IDs:", folderImages.slice(0, 3).map((r: any) => r.public_id));
+    // Log for debugging (works in both development and production)
+    console.log("=== CLOUDINARY IMAGES API DEBUG ===");
+    console.log(`Total images from Cloudinary: ${data.resources.length}`);
+    console.log(`Images in folder "${CLOUDINARY_CONFIG.FOLDER || 'root'}": ${folderImages.length}`);
+    console.log(`Cloud Name: ${CLOUDINARY_CONFIG.CLOUD_NAME}`);
+    console.log(`Folder: ${CLOUDINARY_CONFIG.FOLDER || '(root)'}`);
+    
+    if (folderImages.length > 0) {
+      console.log("First 5 public IDs found:");
+      folderImages.slice(0, 5).forEach((resource: any, index: number) => {
+        console.log(`  ${index + 1}. ${resource.public_id} (version: ${resource.version})`);
+      });
+    } else {
+      console.warn("⚠️ NO IMAGES FOUND IN FOLDER!");
+      if (data.resources.length > 0) {
+        console.log("Sample public IDs from all resources (not in folder):");
+        data.resources.slice(0, 5).forEach((resource: any, index: number) => {
+          console.log(`  ${index + 1}. ${resource.public_id}`);
+        });
       }
     }
+    console.log("=== END DEBUG ===");
 
     // Transform the response to match our image interface
     // Include version for cache busting
-    const images = folderImages.map((resource: any) => ({
-      id: resource.asset_id,
-      title: resource.context?.title || resource.public_id.split("/").pop()?.replace(/_/g, ' ') || "Untitled",
-      description: resource.context?.description || "",
-      year: resource.context?.year || new Date().getFullYear().toString(),
-      publicId: resource.public_id, // Keep full public_id including folder path
-      version: resource.version, // Include version for cache busting
-      tags: resource.tags || [],
-      width: resource.width,
-      height: resource.height,
-    }));
+    const images = folderImages.map((resource: any) => {
+      const image = {
+        id: resource.asset_id,
+        title: resource.context?.title || resource.public_id.split("/").pop()?.replace(/_/g, ' ') || "Untitled",
+        description: resource.context?.description || "",
+        year: resource.context?.year || new Date().getFullYear().toString(),
+        publicId: resource.public_id, // Keep full public_id including folder path
+        version: resource.version, // Include version for cache busting
+        tags: resource.tags || [],
+        width: resource.width,
+        height: resource.height,
+      };
+      
+      // Log each image being returned (first 3 only to avoid spam)
+      if (folderImages.indexOf(resource) < 3) {
+        console.log(`Image ${folderImages.indexOf(resource) + 1}:`, {
+          publicId: image.publicId,
+          version: image.version,
+          title: image.title,
+        });
+      }
+      
+      return image;
+    });
+    
+    console.log(`Returning ${images.length} images to client`);
 
     return NextResponse.json(
       { images },
