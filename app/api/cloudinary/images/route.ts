@@ -6,12 +6,17 @@ export async function GET() {
   try {
     // Log configuration status for debugging (works in production too)
     console.log("=== CLOUDINARY CONFIGURATION ===");
-    console.log("USE_CLOUDINARY:", CLOUDINARY_CONFIG.USE_CLOUDINARY);
-    console.log("CLOUD_NAME:", CLOUDINARY_CONFIG.CLOUD_NAME || "MISSING");
-    console.log("API_KEY:", CLOUDINARY_CONFIG.API_KEY ? "***SET***" : "MISSING");
-    console.log("API_SECRET:", CLOUDINARY_CONFIG.API_SECRET ? "***SET***" : "MISSING");
-    console.log("FOLDER:", CLOUDINARY_CONFIG.FOLDER || "(root)");
+    console.log("USE_CLOUDINARY:", CLOUDINARY_CONFIG.USE_CLOUDINARY, `(env: ${process.env.NEXT_PUBLIC_USE_CLOUDINARY})`);
+    console.log("CLOUD_NAME:", CLOUDINARY_CONFIG.CLOUD_NAME || "MISSING", `(env: ${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ? "SET" : "MISSING"})`);
+    console.log("API_KEY:", CLOUDINARY_CONFIG.API_KEY ? "***SET***" : "MISSING", `(env: ${process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY ? "SET" : "MISSING"})`);
+    console.log("API_SECRET:", CLOUDINARY_CONFIG.API_SECRET ? "***SET***" : "MISSING", `(env: ${process.env.CLOUDINARY_API_SECRET ? "SET" : "MISSING"})`);
+    console.log("FOLDER:", CLOUDINARY_CONFIG.FOLDER || "(root)", `(env: ${process.env.NEXT_CLOUDINARY_FOLDER || "default"})`);
     console.log("================================");
+    
+    // Check for common configuration mistakes
+    if (process.env.NEXT_PUBLIC_USE_CLOUDINARY && process.env.NEXT_PUBLIC_USE_CLOUDINARY !== "true") {
+      console.warn(`⚠️ NEXT_PUBLIC_USE_CLOUDINARY is set to "${process.env.NEXT_PUBLIC_USE_CLOUDINARY}" but must be exactly "true" (string)`);
+    }
 
     if (!CLOUDINARY_CONFIG.USE_CLOUDINARY) {
       console.warn("Cloudinary is disabled. Set NEXT_PUBLIC_USE_CLOUDINARY=true");
