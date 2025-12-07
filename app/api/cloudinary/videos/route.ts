@@ -9,7 +9,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const apiSecret = process.env.CLOUDINARY_API_SECRET!;
   const folder = process.env.NEXT_CLOUDINARY_FOLDER!;
 
-  if (!["images", "videos"].includes(type as string)) {
+  // Map plural type to Cloudinary resource_type
+  const resourceTypeMap: Record<string, string> = {
+    images: "image",
+    videos: "video",
+  };
+
+  if (!resourceTypeMap[type as string]) {
     return res.status(400).json({ error: "Invalid type" });
   }
 
@@ -23,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          expression: `resource_type:${type} AND folder="${folder}"`,
+          expression: `resource_type:${resourceTypeMap[type as string]} AND folder:${folder}`,
           max_results: 100,
         }),
       }
