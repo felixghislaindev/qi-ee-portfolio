@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react"
 import { getCloudinaryVideoUrl, fetchCloudinaryVideos, type CloudinaryVideo } from "@/lib/cloudinary"
 
-// Project definitions - videos will be assigned from Cloudinary
+// Project definitions - videos will be assigned from Cloudinary OR YouTube
+// To use YouTube: add youtubeUrl property with any YouTube URL format:
+//   - https://www.youtube.com/watch?v=VIDEO_ID
+//   - https://youtu.be/VIDEO_ID
+//   - https://www.youtube.com/embed/VIDEO_ID
 const projectDefinitions = [
   {
     id: "delish-cube",
@@ -14,6 +18,7 @@ const projectDefinitions = [
       "Coordinated with team members to ensure smooth project workflow and timely deliverables.",
       "Presented project results and insights to supervisors, contributing to the company's marketing objectives.",
     ],
+    youtubeUrl: "https://youtu.be/x70SqflBl0Y?si=8AO0Jb8oEFKpz_Ua",
   },
   {
     id: "you-digital",
@@ -24,6 +29,8 @@ const projectDefinitions = [
       "Conducted research and analysis to support project strategy and decision-making.",
       "Presented project outcomes to instructors and received positive feedback on creativity and teamwork.",
     ],
+    // Example: Add YouTube URL here if you want to use YouTube instead of Cloudinary
+    // youtubeUrl: "https://www.youtube.com/watch?v=YOUR_VIDEO_ID",
   },
 ]
 
@@ -31,8 +38,9 @@ interface ProjectItem {
   id: string
   title: string
   description: string[]
-  videoPublicId: string
+  videoPublicId?: string // Cloudinary public ID
   videoVersion?: number // Cloudinary version for cache busting
+  youtubeUrl?: string // YouTube video URL (alternative to Cloudinary)
 }
 
 export function Projects() {
@@ -54,10 +62,11 @@ export function Projects() {
             id: project.id,
             title: project.title,
             description: project.description,
-            videoPublicId: video?.publicId || "",
+            videoPublicId: video?.publicId || undefined,
             videoVersion: video?.version, // Store version for cache busting
+            youtubeUrl: (project as any).youtubeUrl || undefined, // Allow YouTube URLs in project definitions
           }
-        }).filter(project => project.videoPublicId) // Only include projects with videos
+        }).filter(project => project.videoPublicId || project.youtubeUrl) // Only include projects with videos
 
         setProjects(assignedProjects)
       } catch (error) {
@@ -77,6 +86,31 @@ export function Projects() {
       format: "auto",
       version, // Include version for cache busting
     })
+  }
+
+  // Convert YouTube URL to embed format
+  const getYouTubeEmbedUrl = (url: string): string => {
+    // Handle various YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+    ]
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern)
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}`
+      }
+    }
+
+    // If no match, return original URL (might already be embed format)
+    return url
+  }
+
+  // Check if a URL is a YouTube URL
+  const isYouTubeUrl = (url?: string): boolean => {
+    if (!url) return false
+    return /youtube\.com|youtu\.be/.test(url)
   }
 
   return (
@@ -109,14 +143,32 @@ export function Projects() {
               >
                 {/* Video */}
                 <div className="relative aspect-video bg-muted overflow-hidden">
-                  <video
-                    src={getVideoUrl(project.videoPublicId, project.videoVersion)}
-                    controls
-                    className="w-full h-full object-cover"
-                    preload="metadata"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                  {project.youtubeUrl ? (
+                    // YouTube embed
+                    <iframe
+                      src={getYouTubeEmbedUrl(project.youtubeUrl)}
+                      title={project.title}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      frameBorder="0"
+                    />
+                  ) : project.videoPublicId ? (
+                    // Cloudinary video
+                    <video
+                      src={getVideoUrl(project.videoPublicId, project.videoVersion)}
+                      controls
+                      className="w-full h-full object-cover"
+                      preload="metadata"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    // Fallback placeholder
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      No video available
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}
