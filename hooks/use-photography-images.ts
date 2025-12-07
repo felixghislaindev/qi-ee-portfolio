@@ -123,6 +123,18 @@ export function usePhotographyImages() {
 
       try {
         const cloudinaryImages = await fetchCloudinaryImages();
+        
+        if (cloudinaryImages.length === 0) {
+          console.warn("No Cloudinary images found. Check:", {
+            USE_CLOUDINARY: CLOUDINARY_CONFIG.USE_CLOUDINARY,
+            CLOUD_NAME: CLOUDINARY_CONFIG.CLOUD_NAME,
+            FOLDER: CLOUDINARY_CONFIG.FOLDER,
+          });
+          // Fallback to local images if no Cloudinary images
+          setImages(localImages);
+          return;
+        }
+
         // Transform Cloudinary images to match our interface
         const transformedImages: PhotographyImage[] = cloudinaryImages.map(
           (img) => ({
@@ -135,6 +147,7 @@ export function usePhotographyImages() {
           })
         );
 
+        console.log(`Loaded ${transformedImages.length} images from Cloudinary`);
         setImages(transformedImages);
       } catch (err) {
         setError("Failed to load images");

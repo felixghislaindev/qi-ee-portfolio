@@ -55,6 +55,12 @@ export function getCloudinaryUrl(
     version,
   } = options;
 
+  // Validate CLOUD_NAME is set
+  if (!CLOUDINARY_CONFIG.CLOUD_NAME) {
+    console.error("CLOUDINARY_CONFIG.CLOUD_NAME is not set. Cannot generate Cloudinary URL.");
+    return "/placeholder.svg";
+  }
+
   // Include version in URL for cache busting
   const versionParam = version ? `v${version}/` : '';
   

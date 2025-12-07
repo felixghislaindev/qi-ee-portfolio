@@ -4,10 +4,41 @@ import { CLOUDINARY_CONFIG } from "@/lib/cloudinary";
 // Server-side API route to fetch images from Cloudinary
 export async function GET() {
   try {
+    // Log configuration status for debugging (only in development)
+    if (process.env.NODE_ENV === "development") {
+      console.log("Cloudinary Config:", {
+        USE_CLOUDINARY: CLOUDINARY_CONFIG.USE_CLOUDINARY,
+        CLOUD_NAME: CLOUDINARY_CONFIG.CLOUD_NAME ? "***" : "MISSING",
+        API_KEY: CLOUDINARY_CONFIG.API_KEY ? "***" : "MISSING",
+        API_SECRET: CLOUDINARY_CONFIG.API_SECRET ? "***" : "MISSING",
+        FOLDER: CLOUDINARY_CONFIG.FOLDER,
+      });
+    }
+
     if (!CLOUDINARY_CONFIG.USE_CLOUDINARY) {
+      console.warn("Cloudinary is disabled. Set NEXT_PUBLIC_USE_CLOUDINARY=true");
       return NextResponse.json(
-        { images: [] },
+        { images: [], error: "Cloudinary is disabled" },
         {
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+          },
+        }
+      );
+    }
+
+    if (!CLOUDINARY_CONFIG.CLOUD_NAME || !CLOUDINARY_CONFIG.API_KEY || !CLOUDINARY_CONFIG.API_SECRET) {
+      console.error("Missing Cloudinary credentials:", {
+        hasCloudName: !!CLOUDINARY_CONFIG.CLOUD_NAME,
+        hasApiKey: !!CLOUDINARY_CONFIG.API_KEY,
+        hasApiSecret: !!CLOUDINARY_CONFIG.API_SECRET,
+      });
+      return NextResponse.json(
+        { images: [], error: "Missing Cloudinary credentials" },
+        {
+          status: 500,
           headers: {
             "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
             "Pragma": "no-cache",
@@ -31,10 +62,21 @@ export async function GET() {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch from Cloudinary");
+      const errorText = await response.text();
+      console.error("Cloudinary API error:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+      });
+      throw new Error(`Failed to fetch from Cloudinary: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
+
+    if (!data.resources || !Array.isArray(data.resources)) {
+      console.error("Invalid Cloudinary response:", data);
+      throw new Error("Invalid response from Cloudinary API");
+    }
 
     // Transform the response to match our image interface
     // Include version for cache busting
