@@ -49,8 +49,10 @@ export async function GET() {
     }
 
     // Cloudinary Admin API call - disable caching to get fresh data
+    // Use type=upload to get all images, then filter by folder
+    const folderParam = CLOUDINARY_CONFIG.FOLDER ? `&folder=${encodeURIComponent(CLOUDINARY_CONFIG.FOLDER)}` : '';
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.CLOUD_NAME}/resources/image?folder=${CLOUDINARY_CONFIG.FOLDER}&max_results=100&context=true`,
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.CLOUD_NAME}/resources/image?type=upload${folderParam}&max_results=500&context=true`,
       {
         headers: {
           Authorization: `Basic ${Buffer.from(
@@ -78,14 +80,41 @@ export async function GET() {
       throw new Error("Invalid response from Cloudinary API");
     }
 
+    // Filter images to only include those in the exact folder (not subfolders)
+    // This ensures we only get images from the specified folder
+    let folderImages = data.resources;
+    
+    if (CLOUDINARY_CONFIG.FOLDER && CLOUDINARY_CONFIG.FOLDER !== '') {
+      const folderPrefix = `${CLOUDINARY_CONFIG.FOLDER}/`;
+      folderImages = data.resources.filter((resource: any) => {
+        // Ensure the image is in the exact folder, not a subfolder
+        return resource.public_id.startsWith(folderPrefix) && 
+               !resource.public_id.substring(folderPrefix.length).includes('/');
+      });
+    } else {
+      // If no folder specified, include root-level images (no slashes or single-level)
+      folderImages = data.resources.filter((resource: any) => {
+        const parts = resource.public_id.split('/');
+        return parts.length <= 1; // Root level only
+      });
+    }
+
+    // Log for debugging
+    if (process.env.NODE_ENV === "development") {
+      console.log(`Found ${data.resources.length} total images, ${folderImages.length} in folder "${CLOUDINARY_CONFIG.FOLDER || 'root'}"`);
+      if (folderImages.length > 0) {
+        console.log("Sample public IDs:", folderImages.slice(0, 3).map((r: any) => r.public_id));
+      }
+    }
+
     // Transform the response to match our image interface
     // Include version for cache busting
-    const images = data.resources.map((resource: any) => ({
+    const images = folderImages.map((resource: any) => ({
       id: resource.asset_id,
-      title: resource.context?.title || resource.public_id.split("/").pop(),
+      title: resource.context?.title || resource.public_id.split("/").pop()?.replace(/_/g, ' ') || "Untitled",
       description: resource.context?.description || "",
       year: resource.context?.year || new Date().getFullYear().toString(),
-      publicId: resource.public_id,
+      publicId: resource.public_id, // Keep full public_id including folder path
       version: resource.version, // Include version for cache busting
       tags: resource.tags || [],
       width: resource.width,

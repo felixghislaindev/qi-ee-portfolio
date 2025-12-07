@@ -64,7 +64,11 @@ export function getCloudinaryUrl(
   // Include version in URL for cache busting
   const versionParam = version ? `v${version}/` : '';
   
-  return `https://res.cloudinary.com/${CLOUDINARY_CONFIG.CLOUD_NAME}/image/upload/${versionParam}w_${width},h_${height},c_${crop},q_${quality},f_${format}/${publicId}`;
+  // Cloudinary handles public IDs directly - no encoding needed for the path
+  // However, we need to ensure the public ID is clean (no leading/trailing slashes)
+  const cleanPublicId = publicId.replace(/^\/+|\/+$/g, '');
+  
+  return `https://res.cloudinary.com/${CLOUDINARY_CONFIG.CLOUD_NAME}/image/upload/${versionParam}w_${width},h_${height},c_${crop},q_${quality},f_${format}/${cleanPublicId}`;
 }
 
 // Generate Cloudinary video URL with transformations
