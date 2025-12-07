@@ -5,6 +5,7 @@ export interface CloudinaryImage {
   description: string;
   year: string;
   publicId: string; // Cloudinary public ID
+  version?: number; // Cloudinary version for cache busting
   tags?: string[];
   width?: number;
   height?: number;
@@ -16,6 +17,7 @@ export interface CloudinaryVideo {
   description: string;
   year: string;
   publicId: string; // Cloudinary public ID
+  version?: number; // Cloudinary version for cache busting
   tags?: string[];
   width?: number;
   height?: number;
@@ -41,6 +43,7 @@ export function getCloudinaryUrl(
     quality?: string;
     format?: string;
     crop?: string;
+    version?: number; // Version for cache busting
   } = {}
 ) {
   const {
@@ -49,9 +52,13 @@ export function getCloudinaryUrl(
     quality = "auto",
     format = "auto",
     crop = "fill",
+    version,
   } = options;
 
-  return `https://res.cloudinary.com/${CLOUDINARY_CONFIG.CLOUD_NAME}/image/upload/w_${width},h_${height},c_${crop},q_${quality},f_${format}/${publicId}`;
+  // Include version in URL for cache busting
+  const versionParam = version ? `v${version}/` : '';
+  
+  return `https://res.cloudinary.com/${CLOUDINARY_CONFIG.CLOUD_NAME}/image/upload/${versionParam}w_${width},h_${height},c_${crop},q_${quality},f_${format}/${publicId}`;
 }
 
 // Generate Cloudinary video URL with transformations
@@ -62,6 +69,7 @@ export function getCloudinaryVideoUrl(
     height?: number;
     quality?: string;
     format?: string;
+    version?: number; // Version for cache busting
   } = {}
 ) {
   if (!CLOUDINARY_CONFIG.CLOUD_NAME) {
@@ -74,9 +82,13 @@ export function getCloudinaryVideoUrl(
     height,
     quality = "auto",
     format = "auto",
+    version,
   } = options;
 
-  let url = `https://res.cloudinary.com/${CLOUDINARY_CONFIG.CLOUD_NAME}/video/upload`;
+  // Include version in URL for cache busting
+  const versionParam = version ? `v${version}/` : '';
+  
+  let url = `https://res.cloudinary.com/${CLOUDINARY_CONFIG.CLOUD_NAME}/video/upload/${versionParam}`;
   
   const transformations: string[] = [];
   if (width) transformations.push(`w_${width}`);
@@ -85,10 +97,10 @@ export function getCloudinaryVideoUrl(
   transformations.push(`f_${format}`);
   
   if (transformations.length > 0) {
-    url += `/${transformations.join(",")}`;
+    url += `${transformations.join(",")}/`;
   }
   
-  url += `/${publicId}`;
+  url += `${publicId}`;
   
   return url;
 }
@@ -100,8 +112,14 @@ export async function fetchCloudinaryImages(): Promise<CloudinaryImage[]> {
   }
 
   try {
-    // This would be your server-side API call to Cloudinary
-    const response = await fetch("/api/cloudinary/images");
+    // Disable caching to ensure fresh data
+    const response = await fetch("/api/cloudinary/images", {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+      },
+    });
     if (!response.ok) throw new Error("Failed to fetch images");
 
     const data = await response.json();
@@ -136,8 +154,14 @@ export async function fetchCloudinaryVideos(): Promise<CloudinaryVideo[]> {
   }
 
   try {
-    // This would be your server-side API call to Cloudinary
-    const response = await fetch("/api/cloudinary/videos");
+    // Disable caching to ensure fresh data
+    const response = await fetch("/api/cloudinary/videos", {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+      },
+    });
     if (!response.ok) throw new Error("Failed to fetch videos");
 
     const data = await response.json();

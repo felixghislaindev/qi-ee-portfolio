@@ -100,6 +100,7 @@ export interface PhotographyImage {
   title: string;
   image?: string; // For local images
   publicId?: string; // For Cloudinary images
+  version?: number; // Cloudinary version for cache busting
   description: string;
   year: string;
 }
@@ -128,6 +129,7 @@ export function usePhotographyImages() {
             id: img.id,
             title: img.title,
             publicId: img.publicId,
+            version: img.version, // Include version for cache busting
             description: img.description,
             year: img.year,
           })
@@ -153,7 +155,10 @@ export function usePhotographyImages() {
     options?: { width?: number; height?: number }
   ) => {
     if (image.publicId && CLOUDINARY_CONFIG.USE_CLOUDINARY) {
-      return getCloudinaryUrl(image.publicId, options);
+      return getCloudinaryUrl(image.publicId, {
+        ...options,
+        version: image.version, // Use version for cache busting
+      });
     }
     return image.image || "/placeholder.svg";
   };

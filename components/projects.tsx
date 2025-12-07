@@ -32,6 +32,7 @@ interface ProjectItem {
   title: string
   description: string[]
   videoPublicId: string
+  videoVersion?: number // Cloudinary version for cache busting
 }
 
 export function Projects() {
@@ -54,6 +55,7 @@ export function Projects() {
             title: project.title,
             description: project.description,
             videoPublicId: video?.publicId || "",
+            videoVersion: video?.version, // Store version for cache busting
           }
         }).filter(project => project.videoPublicId) // Only include projects with videos
 
@@ -69,10 +71,11 @@ export function Projects() {
     loadProjects()
   }, [])
 
-  const getVideoUrl = (publicId: string) => {
+  const getVideoUrl = (publicId: string, version?: number) => {
     return getCloudinaryVideoUrl(publicId, {
       quality: "auto",
       format: "auto",
+      version, // Include version for cache busting
     })
   }
 
@@ -107,7 +110,7 @@ export function Projects() {
                 {/* Video */}
                 <div className="relative aspect-video bg-muted overflow-hidden">
                   <video
-                    src={getVideoUrl(project.videoPublicId)}
+                    src={getVideoUrl(project.videoPublicId, project.videoVersion)}
                     controls
                     className="w-full h-full object-cover"
                     preload="metadata"
