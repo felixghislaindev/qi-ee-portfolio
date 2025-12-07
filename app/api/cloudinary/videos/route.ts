@@ -3,33 +3,42 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { type } = req.query; // 'images' or 'videos'
-  const folder = process.env.NEXT_CLOUDINARY_FOLDER; // optional folder filter
+  const folder = process.env.NEXT_CLOUDINARY_FOLDER; // Cloudinary folder name
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
   const apiKey = process.env.CLOUDINARY_API_KEY!;
   const apiSecret = process.env.CLOUDINARY_API_SECRET!;
 
+  // Map query param to Cloudinary resource type
   const resourceTypeMap: Record<string, string> = {
     images: "image",
     videos: "video",
   };
 
   const resourceType = resourceTypeMap[type as string];
-  if (!resourceType) return res.status(400).json({ error: "Invalid type" });
+  if (!resourceType) {
+    return res.status(400).json({ error: "Invalid type. Use 'images' or 'videos'." });
+  }
 
   try {
     let allItems: any[] = [];
     let nextCursor: string | undefined = undefined;
 
     do {
+      // Cloudinary search API payload
       const body: any = {
         expression: `resource_type:${resourceType}`,
         max_results: 500,
       };
 
-      if (folder) body.expression += ` AND folder:${folder}`;
-      if (nextCursor) body.next_cursor = nextCursor;
+      if (folder) {
+        body.expression += ` AND folder:${folder}`;
+      }
+      if (nextCursor) {
+        body.next_cursor = nextCursor;
+      }
 
+      // Fetch from Cloudinary
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/resources/search`,
         {
@@ -44,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const data = await response.json();
 
-      // Log the raw Cloudinary response
+      // Log raw Cloudinary response
       console.log("Raw Cloudinary response:", data);
 
       if (!response.ok) {
@@ -53,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const items = (data.resources || []).map((item: any) => ({
-        url: item.secure_url,
+        url: item.secure_url, // full URL for front-end
         publicId: item.public_id,
         folder: item.folder,
         width: item.width,
@@ -65,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       nextCursor = data.next_cursor;
     } while (nextCursor);
 
-    // Log the final response data before returning
+    // Log final processed items
     console.log("Final API response items:", allItems);
 
     return res.status(200).json({ items: allItems, count: allItems.length });
