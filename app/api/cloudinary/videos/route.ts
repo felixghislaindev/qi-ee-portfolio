@@ -7,7 +7,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
   const apiKey = process.env.CLOUDINARY_API_KEY!;
   const apiSecret = process.env.CLOUDINARY_API_SECRET!;
-  const folder = process.env.NEXT_CLOUDINARY_FOLDER!;
 
   // Map plural type to Cloudinary resource_type
   const resourceTypeMap: Record<string, string> = {
@@ -29,8 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          expression: `resource_type:${resourceTypeMap[type as string]} AND folder:${folder}`,
-          max_results: 100,
+          expression: `resource_type:${resourceTypeMap[type as string]}`, // no folder filter
+          max_results: 500, // increase if you have more than 100
         }),
       }
     );
@@ -42,6 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: "Failed to fetch from Cloudinary" });
     }
 
+    // Log all items for debugging
+    console.log("All Cloudinary items:", data.resources);
+
     const items = (data.resources || []).map((item: any) => ({
       id: item.asset_id,
       url: item.secure_url,
@@ -50,6 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       height: item.height,
       format: item.format,
       folder: item.folder,
+      createdAt: item.created_at,
     }));
 
     return res.status(200).json({ items, count: items.length });
