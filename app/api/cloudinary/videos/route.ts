@@ -1,54 +1,54 @@
-import { NextResponse } from "next/server";
+// /pages/api/cloudinary/[type].ts
+import { NextApiRequest, NextApiResponse } from "next";
 
-export async function GET() {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { type } = req.query; // 'images' or 'videos'
+
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+  const apiKey = process.env.CLOUDINARY_API_KEY!;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET!;
+  const folder = process.env.NEXT_CLOUDINARY_FOLDER!;
+
+  if (!["images", "videos"].includes(type as string)) {
+    return res.status(400).json({ error: "Invalid type" });
+  }
+
   try {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
-    const apiKey = process.env.CLOUDINARY_API_KEY!; // server-only
-    const apiSecret = process.env.CLOUDINARY_API_SECRET!;
-    const folder = process.env.NEXT_CLOUDINARY_FOLDER!;
-
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/resources/search`,
       {
         method: "POST",
         headers: {
-          Authorization:
-            "Basic " + Buffer.from(`${apiKey}:${apiSecret}`).toString("base64"),
+          Authorization: `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString("base64")}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          expression: `resource_type:image AND folder="${folder}"`,
+          expression: `resource_type:${type} AND folder="${folder}"`,
           max_results: 100,
         }),
       }
     );
 
     const data = await response.json();
-    console.log("Cloudinary API response:", data);
 
     if (!response.ok) {
-      throw new Error("Cloudinary API error: " + JSON.stringify(data));
+      console.error("Cloudinary error:", data);
+      return res.status(500).json({ error: "Failed to fetch from Cloudinary" });
     }
 
-    const images = (data.resources || []).map((res: any) => ({
-      id: res.asset_id,
-      publicId: res.public_id,
-      url: res.secure_url + `?v=${res.version}`,
-      width: res.width,
-      height: res.height,
-      format: res.format,
-      folder: res.folder,
+    const items = (data.resources || []).map((item: any) => ({
+      id: item.asset_id,
+      url: item.secure_url,
+      publicId: item.public_id,
+      width: item.width,
+      height: item.height,
+      format: item.format,
+      folder: item.folder,
     }));
 
-    return NextResponse.json(
-      { images, imagesCount: images.length },
-      { headers: { "Cache-Control": "no-store" } }
-    );
+    return res.status(200).json({ items, count: items.length });
   } catch (err: any) {
-    console.error("Cloudinary fetch error:", err);
-    return NextResponse.json(
-      { error: "Failed to load images", hasError: true },
-      { status: 500 }
-    );
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Server failed to fetch Cloudinary data" });
   }
 }
